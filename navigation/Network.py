@@ -1,0 +1,227 @@
+import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.layers import Dropout,BatchNormalization,Input,Dense,Conv2D,Activation,Flatten,MaxPooling2D
+import numpy as np
+import cv2
+import os
+import gc
+
+class FC(tf.keras.layers.Layer):
+    def __init__(self):
+        super(FC,self).__init__()
+##        self.batch11=BatchNormalization()
+##        self.batch12=BatchNormalization()
+##        self.batch13=BatchNormalization()
+##        self.batch21=BatchNormalization()
+##        self.batch22=BatchNormalization()
+##        self.batch23=BatchNormalization()
+        self.drop1=Dropout(0.25)
+        self.drop2=Dropout(0.25)
+        self.drop3=Dropout(0.25)
+        self.drop4=Dropout(0.25)
+        self.dense11=Dense(1024)
+        self.act11=Activation('relu')
+        self.act12=Activation('relu')
+        self.dense12=Dense(1024)
+        self.act13=Activation('relu')
+        self.act21=Activation('relu')
+        self.act22=Activation('relu')
+        self.act23=Activation('relu')
+        self.act14=Activation('softmax')
+        self.act24=Activation('linear')
+        self.dense13=Dense(1024)
+        self.dense21=Dense(1024)
+        self.dense22=Dense(1024)
+        self.dense23=Dense(1024)
+        self.dense14=Dense(3)
+        self.dense24=Dense(1)
+   
+    def call(self,X,training=False):
+        out1=self.dense11(X)
+        #x=self.batch1(x,training=training)
+        out1=self.act11(out1)
+        if training:
+            out1=self.drop1(out1)
+        out1=self.dense12(out1)
+        #x=self.batch2(x,training=training)
+        out1=self.act12(out1)
+        if training:
+            out1=self.drop2(out1)
+        out1=self.dense13(out1)
+        #x=self.batch3(x,training=training)
+        out1=self.act13(out1)
+        out1=self.dense14(out1)
+        #x=self.batch4(x,training=training)
+        out1=self.act14(out1)
+        
+        out2=self.dense21(X)
+        #out1=self.batch5(out1,training=training)
+        out2=self.act21(out2)
+        if training:
+            out2=self.drop3(out2)
+        out2=self.dense22(out2)
+        #out2=self.batch6(out2,training=training)
+        out2=self.act22(out2)
+        if training:
+            out2=self.drop4(out2)
+        out2=self.dense23(out2)
+        out2=self.act23(out2)
+        out2=self.dense24(out2)
+        out2=self.act24(out2)
+        return out1,out2
+class Network(tf.keras.Model):
+    def __init__(self):
+        super(Network,self).__init__()
+        self.drop1=Dropout(0.25)
+        self.drop2=Dropout(0.25)
+        self.dense1=Dense(128)
+        self.dense2=Dense(128)
+        self.dense3=Dense(64)
+        self.dense4=Dense(64)
+        self.act01=Activation('relu')
+        self.act02=Activation('relu')
+        self.act03=Activation('relu')
+        self.act04=Activation('relu')
+        #self.batch01=BatchNormalization()
+        #self.batch02=BatchNormalization()
+        
+        self.conv1=Conv2D(32,(3,3))
+        #self.batch1=BatchNormalization()
+        self.act1=Activation('relu')
+        self.max1=MaxPooling2D((3,3))
+        self.conv2=Conv2D(64,(3,3))
+        #self.batch2=BatchNormalization()
+        self.act2=Activation('relu')
+        self.max2=MaxPooling2D((3,3))
+        self.conv3=Conv2D(128,(3,3))
+        #self.batch3=BatchNormalization()
+        self.act3=Activation('relu')
+        self.max3=MaxPooling2D((3,3))
+        self.conv4=Conv2D(256,(3,3))
+        #self.batch4=BatchNormalization()
+        self.act4=Activation('relu')
+        self.max4=MaxPooling2D((2,2))
+        self.fl1=Flatten()
+        
+        self.conv5=Conv2D(32,(3,3))
+        #self.batch5=BatchNormalization()
+        self.act5=Activation('relu')
+        self.max5=MaxPooling2D((3,3))
+        self.conv6=Conv2D(64,(3,3))
+        #self.batch6=BatchNormalization()
+        self.act6=Activation('relu')
+        self.max6=MaxPooling2D((3,3))
+        self.conv7=Conv2D(128,(3,3))
+        #self.batch7=BatchNormalization()
+        self.act7=Activation('relu')
+        self.max7=MaxPooling2D((3,3))
+        self.conv8=Conv2D(256,(3,3))
+        #self.batch8=BatchNormalization()
+        self.act8=Activation('relu')
+        self.max8=MaxPooling2D((2,2))
+        self.fl2=Flatten()
+        
+        self.conv9=Conv2D(32,(3,3))
+        #self.batch9=BatchNormalization()
+        self.act9=Activation('relu')
+        self.max9=MaxPooling2D((3,3))
+        self.conv10=Conv2D(64,(3,3))
+        #self.batch10=BatchNormalization()
+        self.act10=Activation('relu')
+        self.max10=MaxPooling2D((3,3))
+        self.conv11=Conv2D(128,(3,3))
+        #self.batch11=BatchNormalization()
+        self.act11=Activation('relu')
+        self.max11=MaxPooling2D((3,3))
+        self.conv12=Conv2D(256,(3,3))
+        #self.batch12=BatchNormalization()
+        self.act12=Activation('relu')
+        self.max12=MaxPooling2D((2,2))
+        self.fl3=Flatten()
+        
+        self.fc=FC()
+    @tf.function
+    def call(self,X,training=False):
+        x1=self.conv1(X[0])
+        #x1=self.batch1(x1)
+        x1=self.act1(x1)
+        x1=self.max1(x1)
+        
+        x1=self.conv2(x1)
+        #x1=self.batch2(x1)
+        x1=self.act2(x1)
+        x1=self.max2(x1)
+        
+        x1=self.conv3(x1)
+        #x1=self.batch3(x1)
+        x1=self.act3(x1)
+        x1=self.max3(x1)
+        
+        x1=self.conv4(x1)
+        #x1=self.batch4(x1)
+        x1=self.act4(x1)
+        x1=self.max4(x1)
+        x1=self.fl1(x1)
+        
+        x2=self.conv5(X[1])
+        #x2=self.batch5(x2)
+        x2=self.act5(x2)
+        x2=self.max5(x2)
+        
+        x2=self.conv6(x2)
+        #x2=self.batch6(x2)
+        x2=self.act6(x2)
+        x2=self.max6(x2)
+        
+        x2=self.conv7(x2)
+        #x2=self.batch7(x2)
+        x2=self.act7(x2)
+        x2=self.max7(x2)
+        
+        x2=self.conv8(x2)
+        #x2=self.batch8(x2)
+        x2=self.act8(x2)
+        x2=self.max8(x2)
+        x2=self.fl2(x2)
+        
+        x3=self.conv9(X[2])
+        #x3=self.batch9(x3)
+        x3=self.act9(x3)
+        x3=self.max9(x3)
+        
+        x3=self.conv10(x3)
+        #x13=self.batch10(x3)
+        x3=self.act10(x3)
+        x3=self.max10(x3)
+        
+        x3=self.conv11(x3)
+        #x3=self.batch11(x3)
+        x3=self.act11(x3)
+        x3=self.max11(x3)
+        
+        x3=self.conv12(x3)
+        #x13=self.batch12(x3)
+        x3=self.act12(x3)
+        x3=self.max12(x3)
+        x3=self.fl3(x3)
+        
+        x4=self.dense1(X[4])
+        #x4=self.batch01(x4)
+        x4=self.act01(x4)
+        x4=self.dense2(x4)
+        #x4=self.batch02(x4)
+        x4=self.act02(x4)
+        if training:
+            x4=self.drop1(x4)
+
+        x5=self.dense3(X[3])
+        x5=self.act03(x5)
+        x5=self.dense4(x5)
+        x5=self.act04(x5)
+        if training:
+            x5=self.drop2(x5)
+        
+        x=tf.keras.layers.concatenate([x1,x2,x3,x4,x5])
+        out1,out2=self.fc(x,training)
+        return out1,out2
